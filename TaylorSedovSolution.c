@@ -74,11 +74,11 @@ double Vmin( TaylorSedovProblem *p ) {
 	return 1.0/gas_gamma;
 }
 
-double Xi_W( double W, TaylorSedovProblem* p ) {
+double Xi_offset( double dV, TaylorSedovProblem* p ) {
 	double gas_gamma = p->gas_gamma;
-	double V = Vmin( p ) + W;
+	double V = Vmin( p ) + dV;
 	double X = ( ( gas_gamma + 1.0 )/( 7.0 - gas_gamma ) )*( 5.0 - ( 3.0*gas_gamma - 1.0 )*V );
-	// double W = ( ( gas_gamma + 1.0 )/( gas_gamma - 1.0 ) ) * ( gas_gamma * V - 1.0 );
+	double W = ( ( gas_gamma + 1.0 )/( gas_gamma - 1.0 ) ) * ( gas_gamma * dV );
 	double Y = ( gas_gamma + 1.0 )*V/2.0;
 
 	return pow( Y, -2.0/5.0 ) * pow( X, Nu1( p )/5.0 ) * pow( W, Nu2( p )/5.0 );
@@ -86,19 +86,19 @@ double Xi_W( double W, TaylorSedovProblem* p ) {
 
 double Xi( double V, TaylorSedovProblem* p ) {
 	double gas_gamma = p->gas_gamma;
-	return Xi_W( W( V, p ), p );
+	return Xi_offset( V - Vmin( p ), p );
 }
 
 /* Needed to transform xi integrals into V integrals and to do newton solves */
 
-double dXidV_W( double W, TaylorSedovProblem* p ) {
+double dXidV_offset( double dV, TaylorSedovProblem* p ) {
 	double gas_gamma = p->gas_gamma;
-	double V = Vmin( p ) + W;
+	double V = Vmin( p ) + dV;
 	double X = ( ( gas_gamma + 1.0 )/( 7.0 - gas_gamma ) )*( 5.0 - ( 3.0*gas_gamma - 1.0 )*V );
-	// double W = ( ( gas_gamma + 1.0 )/( gas_gamma - 1.0 ) ) * ( gas_gamma * V - 1.0 );
+	double W = ( ( gas_gamma + 1.0 )/( gas_gamma - 1.0 ) ) * ( gas_gamma * dV );
 	double Y = ( gas_gamma + 1.0 )*V/2.0;
 
-	double XiValue = Xi_W( W, p );
+	double XiValue = Xi_offset( dV, p );
 
 	double dYdV = ( gas_gamma + 1.0 )/2.0;
 	double dWdV = ( ( gas_gamma + 1.0 )/( gas_gamma - 1.0 ) )*gas_gamma;
@@ -108,7 +108,7 @@ double dXidV_W( double W, TaylorSedovProblem* p ) {
 }
 
 double dXidV( double V, TaylorSedovProblem* p ) {
-	return dXidV_W( W( V, p ), p );
+	return dXidV_offset( V - Vmin( p ), p );
 }
 
 void XdX( double V, TaylorSedovProblem *p, double *xi, double *dxi ) 
@@ -152,7 +152,7 @@ double Z( double V, TaylorSedovProblem *p ) {
 	return gas_gamma*( gas_gamma - 1.0 )*( 1.0 - V )*V*V/( 2.0 * ( gas_gamma * V - 1.0 ) );
 }
 
-int main( int, char* )
+int main( int, char** )
 {
 	TaylorSedovProblem problem = {
 		.rhoZero = 1.0,
@@ -160,6 +160,7 @@ int main( int, char* )
 		.gas_gamma = 5.0/3.0
 	};
 
+	printf( "Xi(0.675) = %.8f\ndXidV(0.675) = %.8f", Xi( .675, &problem ), dXidV( .675, &problem ) );
 	printf( "V(xi = 0.5) = %.8f\n", VofXi( 0.5, &problem ) );
 	return 0;
 }
