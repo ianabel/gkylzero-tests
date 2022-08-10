@@ -29,6 +29,14 @@ typedef struct TaylorSedovProblem_t {
 	double rhoZero; // External density
 	double InjectedEnergy;
 	double gas_gamma;
+	double alpha;
 } TaylorSedovProblem;
+
+void SetAlpha( TaylorSedovProblem * );
+
+double TaylorSedovR( double , TaylorSedovProblem * );
+double TaylorSedovRho( double , double , TaylorSedovProblem * );
+double TaylorSedovU( double, double, TaylorSedovProblem * );
+double TaylorSedovP( double, double, TaylorSedovProblem * );
 
 

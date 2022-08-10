@@ -8,52 +8,39 @@
 #include <gkyl_wv_euler.h>
 #include <rt_arg_parse.h>
 
-struct euler_ctx {
-  double gas_gamma; // gas constant
-};
+#include "TaylorSedov.h"
 
-const double alpha = 1.152;
 
-void TaylorSedovSolution( double t, double r, double * GKYL_RESTRICT out, const TaylorSedovSolution_t *problem )
-{
-	double R_shock; // Shock radius
-	double xi; // Similarity variable
-	
-	R_shock = 
-}
-
-void
-evalEulerInit(double t, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
+void eval(double t, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
 {
   struct euler_ctx *app = ctx;
   double gas_gamma = app->gas_gamma;
 
-  double r = 
-
+  double r = rCoordinate( xn );
 
 }
 
 // map (r,theta) -> (x,y)
-void
-mapc2p(double t, const double *xc, double* GKYL_RESTRICT xp, void *ctx)
+void mapc2p(double t, const double *xc, double* GKYL_RESTRICT xp, void *ctx)
 {
-  double r = xc[0], th = xc[1];
-  xp[0] = r*cos(th); xp[1] = r*sin(th);
+  double r = rCoordinate( xc ), theta = thetaCoordinate( xc ), phi = phiCoordinate( xc );
+
+  // Physical space is always (x,y,z)
+  //
+  xp[ 0 ] = r * sin( theta ) * cos( phi ); 
+
+  xp[ 1 ] = r * sin( theta ) * sin( phi );
+
+  xp[ 2 ] = r * cos( theta );
 }
 
-struct euler_ctx
-euler_ctx(void)
-{
-  return (struct euler_ctx) { .gas_gamma = 1.4 };
-}
-
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   struct gkyl_app_args app_args = parse_app_args(argc, argv);
 
   int NX = APP_ARGS_CHOOSE(app_args.xcells[0], 64);
   int NY = APP_ARGS_CHOOSE(app_args.xcells[1], 2);
+  int NZ = APP_ARGS_CHOOSE(app_args.xcells[2], 2);
 
   double theta = 0.01; // wedge angle
 
@@ -61,37 +48,46 @@ main(int argc, char **argv)
     gkyl_cu_dev_mem_debug_set(true);
     gkyl_mem_debug_set(true);
   }
-  struct euler_ctx ctx = euler_ctx(); // context for init functions
+
+  TaylorSedovProblem testProblem = {
+	  .rhoZero = 1.0;
+	  .InjectedEnergy = 1.0;
+	  .gas_gamma = 5.0/3.0;
+  };
 
   // equation object
-  struct gkyl_wv_eqn *euler = gkyl_wv_euler_new(ctx.gas_gamma);
+  struct gkyl_wv_eqn *euler = gkyl_wv_euler_new( testProblem.gas_gamma );
 
   struct gkyl_moment_species fluid = {
     .name = "euler",
 
     .equation = euler,
     .evolve = 1,
-    .ctx = &ctx,
-    .init = evalEulerInit,
+    .ctx = &testProblem,
+    .init = evalTaylorSedovInit,
+	 .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
 
-    .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
-    .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
+    .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
+	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
+	 // .bcz ignored because set to be periodic later
   };
 
   // VM app
   struct gkyl_moment app_inp = {
-    .name = "euler_wedge_sodshock",
+    .name = "euler_taylorsedov_test",
 
-    .ndim = 2,
+    .ndim = 3,
     // grid in computational space
-    .lower = { 0.25, -theta/2 },
-    .upper = { 1.25,  theta/2 },
-    .cells = { NX, NY },
+    .lower = { 0.1, -theta/2, 0.0 },
+    .upper = { 10.0,  theta/2, 2.0*M_PI },
+    .cells = { NX, NY, NZ },
 
     .mapc2p = mapc2p, // mapping of computational to physical space
 
     .cfl_frac = 0.9,
 
+    .num_periodic_dirs = 1,
+    .periodic_dirs = { 2 },
     .num_species = 1,
     .species = { fluid },
   };
