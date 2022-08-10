@@ -30,7 +30,7 @@ double GSLNewtonSolve( double x0, gsl_function_fdf *func, double absTol, double 
 		printf( "Maximum iterations exceeded in Newton Solve\n" );
 	}
 
-	gsl_root_fsolver_free( solver );
+	gsl_root_fdfsolver_free( solver );
 
 	return x;
 }
@@ -121,7 +121,7 @@ double VofXi( double XiValue, TaylorSedovProblem* p )
 {
 	double gas_gamma = p->gas_gamma;
 	double VMin = 1.0/gas_gamma;
-	double VMax = 5.0/( 3.0*gas_gamma - 1.0 );
+	double VMax = 2.0/( gas_gamma + 1.0 );
 	double eps = 1e-10;
 	if ( Xi( VMin + eps, p ) < XiValue ) {
 		gsl_function_fdf FDF = {
