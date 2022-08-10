@@ -25,9 +25,10 @@
  * Taylor-Sedov blast wave into a constant-density medium
  */
 
-struct TaylorSedovProblem_t {
+typedef struct TaylorSedovProblem_t {
 	double rhoZero; // External density
 	double InjectedEnergy;
+	double gas_gamma;
 } TaylorSedovProblem;
 
 
