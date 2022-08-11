@@ -1,6 +1,9 @@
+#ifndef TAYLORSEDOV_H
+#define TAYLORSEDOV_H
 
 #define R_IDX 0
 #define THETA_IDX 1
+
 #define PHI_IDX 2
 
 #define rCoordinate( xn ) xn[ R_IDX ]
@@ -9,16 +12,16 @@
 
 
 #define RHO_IDX 0
-#define RHO_UX_IDX 1
-#define RHO_UY_IDX 2
-#define RHO_UZ_IDX 3
-#define INT_ENG_IDX 4
+#define RHO_UR_IDX 1 + R_IDX
+#define RHO_UTHETA_IDX 1 + THETA_IDX
+#define RHO_UPHI_IDX 1 + PHI_IDX
+#define ENERGY_IDX 4
 
 #define RHO( out ) out[ RHO_IDX ]
-#define RHO_UX( out ) out[ RHO_UX_IDX ]
-#define RHO_UY( out ) out[ RHO_UY_IDX ]
-#define RHO_UZ( out ) out[ RHO_UZ_IDX ]
-#define INT_ENG( out ) out[ INT_ENG_IDX ]
+#define RHO_UR( out ) out[ RHO_UR_IDX ]
+#define RHO_UTHETA( out ) out[ RHO_UTHETA_IDX ]
+#define RHO_UPHI( out ) out[ RHO_UPHI_IDX ]
+#define ENERGY( out ) out[ ENERGY_IDX ]
 
 /*
  * This test sets up the spherically-symmettric
@@ -40,3 +43,4 @@ double TaylorSedovU( double, double, TaylorSedovProblem * );
 double TaylorSedovP( double, double, TaylorSedovProblem * );
 
 
+#endif // TAYLORSEDOV_H

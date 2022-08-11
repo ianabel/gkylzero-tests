@@ -21,19 +21,15 @@ def read_data(pre, species, frame, gas_gamma):
     rhouz = fluid5m[..., 3]
     e = fluid5m[..., 4] # 1/2 rho u^2 + p/(gas_gamma - 1)
 
-    # gridx, gridy are vertex locations now
-    plt.figure(1)
-    plt.pcolormesh(gridx, gridy, rho[...,0])
 
-    #center the grid values
-    for d in range(len(gridx)):
-        gridx[d] = 0.5*(gridx[d] + gridx[d])
-        gridy[d] = 0.5*(gridy[d] + gridy[d])
-        gridz[d] = 0.5*(gridz[d] + gridz[d])
+    r_min = 0.10;
+    r_max = 1.38;
+    NX = 64;
+    dr = (r_max - r_min)/64;
+    r_values = np.linspace(r_min + dr/2,r_max-dr/2,NX)
+    plt.plot( r_values, rho[:,0,0] )
 
-    # gridx, gridy are cell center locations now
-    plt.figure(2)
-    plt.pcolormesh(gridx, gridy, rho[...,0] )        
+
     plt.show()
     
-read_data('euler_taylorsedov_test', 'euler', 0, 5.0/3.0)
+read_data('euler_taylorsedov_test', 'euler', int(sys.argv[1]), 5.0/3.0)

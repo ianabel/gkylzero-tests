@@ -10,13 +10,51 @@
 
 #include "TaylorSedov.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323844
+#endif
 
-void eval(double t, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
+typedef struct TaylorSedovTestCTX_t {
+	TaylorSedovProblem *p;
+	double r_min;
+	double dr;
+	double tZero;
+} TaylorSedovTestCTX;
+
+void evalTaylorSedovBC( double t_sim, int /* nc */, const double * /* skin */, double * GKYL_RESTRICT ghost, void *ctx)
 {
-  struct euler_ctx *app = ctx;
-  double gas_gamma = app->gas_gamma;
+  TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
+  TaylorSedovProblem *p = ( ( TaylorSedovTestCTX* )ctx )->p;
+  double r = tsCTX->r_min - tsCTX->dr/2.0;
+  double t = t_sim + tsCTX->tZero;
+  double u = TaylorSedovU( t, r, p );
+  double rho = TaylorSedovRho( t, r, p );
+  double P = TaylorSedovP( t, r, p );
 
+  RHO( ghost )        = rho;
+  RHO_UR( ghost )     = u;
+  RHO_UTHETA( ghost ) = 0.0;
+  RHO_UPHI( ghost )   = 0.0;
+  ENERGY( ghost )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
+}
+
+
+void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
+{
+  TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
+  TaylorSedovProblem *p = ( ( TaylorSedovTestCTX* )ctx )->p;
+
+  double t = t_sim + tsCTX->tZero;
   double r = rCoordinate( xn );
+  double u = TaylorSedovU( t, r, p );
+  double rho = TaylorSedovRho( t, r, p );
+  double P = TaylorSedovP( t, r, p );
+
+  RHO( fout )        = rho;
+  RHO_UR( fout )     = u;
+  RHO_UTHETA( fout ) = 0.0;
+  RHO_UPHI( fout )   = 0.0;
+  ENERGY( fout )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
 
 }
 
@@ -44,16 +82,46 @@ int main(int argc, char **argv)
 
   double theta = 0.01; // wedge angle
 
+  double r_min = 0.10;
+  double r_max = 1.38;
+
+  double dr = ( r_max - r_min )/NX;
+
   if (app_args.trace_mem) {
     gkyl_cu_dev_mem_debug_set(true);
     gkyl_mem_debug_set(true);
   }
 
   TaylorSedovProblem testProblem = {
-	  .rhoZero = 1.0;
-	  .InjectedEnergy = 1.0;
-	  .gas_gamma = 5.0/3.0;
+	  .rhoZero = 1.0,
+	  .InjectedEnergy = 1.0,
+	  .gas_gamma = 5.0/3.0
   };
+
+  TaylorSedovTestCTX ctx = {
+	  .p = &testProblem,
+	  .r_min = r_min,
+	  .dr = dr
+  };
+
+  // Precompute the proportionality constant
+  SetAlpha( &testProblem );
+
+  // Work out InjectedEnergy by picking where the shockwave should be at t = tEnd
+  double tEnd  = 0.1; // In seconds since the explosion
+  double RZero = 0.4; 
+  double REnd  = 1.2;
+
+  // Work out what the initial time-since-explosion is
+  // from the requirement that the shock end up at a given position at a given
+  // physical time
+  double tZero = pow( RZero/REnd, 5.0/2.0 ) * tEnd;
+
+  ctx.tZero = tZero;
+
+  // Now work out energy
+  testProblem.InjectedEnergy = pow( RZero / testProblem.alpha, 5.0 ) * testProblem.rhoZero / ( tZero*tZero );
+
 
   // equation object
   struct gkyl_wv_eqn *euler = gkyl_wv_euler_new( testProblem.gas_gamma );
@@ -63,7 +131,7 @@ int main(int argc, char **argv)
 
     .equation = euler,
     .evolve = 1,
-    .ctx = &testProblem,
+    .ctx = &ctx,
     .init = evalTaylorSedovInit,
 	 .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
 
@@ -78,15 +146,15 @@ int main(int argc, char **argv)
 
     .ndim = 3,
     // grid in computational space
-    .lower = { 0.1, -theta/2, 0.0 },
-    .upper = { 10.0,  theta/2, 2.0*M_PI },
+    .lower = { r_min, -theta/2, 0.0 },
+    .upper = { r_max,  theta/2, 2.0*M_PI },
     .cells = { NX, NY, NZ },
 
     .mapc2p = mapc2p, // mapping of computational to physical space
 
     .cfl_frac = 0.9,
 
-    .num_periodic_dirs = 1,
+    .num_periodic_dir = 1,
     .periodic_dirs = { 2 },
     .num_species = 1,
     .species = { fluid },
@@ -96,7 +164,7 @@ int main(int argc, char **argv)
   gkyl_moment_app *app = gkyl_moment_app_new(&app_inp);
 
   // start, end and initial time-step
-  double tcurr = 0.0, tend = 0.1;
+  double tcurr = 0.0, tend = tEnd - tZero;
 
   // initialize simulation
   gkyl_moment_app_apply_ic(app, tcurr);

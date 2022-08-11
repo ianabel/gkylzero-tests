@@ -278,6 +278,36 @@ void SetAlpha( TaylorSedovProblem *p )
 	p->alpha = Alpha( p );
 }
 
+// Return Shock Location
+double TaylorSedovR( double t, TaylorSedovProblem *p ) {
+	return p->alpha * pow( p->InjectedEnergy * t * t / p->rhoZero, 0.2 );
+}
 
+double TaylorSedovRho( double t, double r, TaylorSedovProblem *p ) {
+	double XiVal = r / TaylorSedovR( t, p );
+	if ( XiVal <= 1.0 )
+		return p->rhoZero * RhoTilde( XiVal, p );
+	else 
+		return p->rhoZero;
+}
 
+double TaylorSedovU( double t, double r, TaylorSedovProblem *p ) {
+	double XiVal = r/ TaylorSedovR( t, p );
+	if ( XiVal <= 1.0 ) {
+		double Rdot = 2*TaylorSedovR( t, p )/( 5 * t );
+		return Rdot * uTilde( XiVal, p );
+	} else {
+		return 0;
+	}
+}
+
+double TaylorSedovP( double t, double r, TaylorSedovProblem *p ) {
+	double XiVal = r/ TaylorSedovR( t, p );
+	if ( XiVal <= 1.0 ) {
+		double Rdot = 2*TaylorSedovR( t, p )/( 5 * t );
+		return p->rhoZero * Rdot * Rdot * pTilde( XiVal, p );
+	} else {
+		return 0;
+	}
+}
 
