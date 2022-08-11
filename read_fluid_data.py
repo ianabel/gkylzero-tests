@@ -27,9 +27,9 @@ def read_data(pre, species, frame, gas_gamma):
 
     #center the grid values
     for d in range(len(gridx)):
-        gridx[d] = 0.5*(gridx[d] + gridx[d])
-        gridy[d] = 0.5*(gridy[d] + gridy[d])
-        gridz[d] = 0.5*(gridz[d] + gridz[d])
+        gridx[d] = 0.5*(gridx[d] + gridx[d+1])
+        gridy[d] = 0.5*(gridy[d] + gridy[d+1])
+        gridz[d] = 0.5*(gridz[d] + gridz[d+1])
 
     # gridx, gridy are cell center locations now
     plt.figure(2)

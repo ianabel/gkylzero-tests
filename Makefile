@@ -24,6 +24,13 @@ endif
 TaylorSedovTest: rt_euler_taylorsedov.c TaylorSedovSolution.c TaylorSedov.h
 	$(CC) $(CFLAGS) $(INCLUDES) -o TaylorSedovTest rt_euler_taylorsedov.c TaylorSedovSolution.c ${G0_DIR}/build/libgkylzero.a -lm -lgsl ${SUPERLU_LIB} ${LAPACK_LIB} -lpthread
 
+rt_euler_taylorsedov_2d: rt_euler_taylorsedov_2d.c TaylorSedovSolution.c TaylorSedov.h
+	$(CC) $(CFLAGS) $(INCLUDES) -o rt_euler_taylorsedov_2d rt_euler_taylorsedov_2d.c TaylorSedovSolution.c ${G0_DIR}/build/libgkylzero.a -lm -lgsl ${SUPERLU_LIB} ${LAPACK_LIB} -lpthread
+
+
+rt_euler_wedge_sodshock: rt_euler_wedge_sodshock.c
+	$(CC) $(CFLAGS) $(INCLUDES) -o rt_euler_wedge_sodshock rt_euler_wedge_sodshock.c ${G0_DIR}/build/libgkylzero.a -lm ${SUPERLU_LIB} ${LAPACK_LIB} -lpthread
+
 clean:
 	rm TaylorSedovTest;
 

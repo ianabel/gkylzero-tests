@@ -11,9 +11,10 @@ import tables
 
 def read_data(pre, species, frame, gas_gamma):
     fluidData = pg.GData('%s-%s_%d.gkyl' % (pre, species, frame), mapc2p_name='%s-mapc2p.gkyl' % pre)
-    dg = pg.GInterpModal(fluidData, 0, 'ms')
-    gridx, gridy, gridz = dg.interpolateGrid()
+    #dg = pg.GInterpModal(fluidData, 0, 'ms')
+    #gridx, gridy, gridz = dg.interpolateGrid()
     fluid5m = fluidData.getValues()
+    grids = fluidData.getGrid()
 
     rho = fluid5m[..., 0]
     rhoux = fluid5m[..., 1]
@@ -23,13 +24,26 @@ def read_data(pre, species, frame, gas_gamma):
 
 
     r_min = 0.10;
-    r_max = 1.38;
+    r_max = 0.78;
     NX = 64;
-    dr = (r_max - r_min)/64;
-    r_values = np.linspace(r_min + dr/2,r_max-dr/2,NX)
-    plt.plot( r_values, rho[:,0,0] )
+    dr = (r_max - r_min)/NX;
+    r_values = np.linspace(r_min + dr/2,r_max - dr/2,NX)
 
+    plt.plot( r_values, rho[:,0] , label = 'rho')
+    plt.plot( r_values, rhoux[:,0], label = 'u' )
+
+    p = (e - 0.5*rho*rhoux*rhoux)*(gas_gamma - 1.0)
+
+    plt.plot( r_values, p[:,0], label = 'p' )
+
+    plt.legend(loc='best')
 
     plt.show()
+
+    print(rho[:,0])
+    print("----")
+    print(p[:,0])
     
-read_data('euler_taylorsedov_test', 'euler', int(sys.argv[1]), 5.0/3.0)
+#read_data('euler_wedge_sodshock', 'euler', int(sys.argv[1]), 5.0/3.0)
+read_data('euler_taylorsedov_test2d', 'euler', int(sys.argv[1]), 5.0/3.0)
+#read_data('euler_taylorsedov_test', 'euler', int(sys.argv[1]), 5.0/3.0)

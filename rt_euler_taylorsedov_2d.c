@@ -8,6 +8,9 @@
 #include <gkyl_wv_euler.h>
 #include <rt_arg_parse.h>
 
+#define _GNU_SOURCE
+#include <fenv.h>
+
 #include "TaylorSedov.h"
 
 #ifndef M_PI
@@ -15,14 +18,8 @@
 #endif
 
 
-typedef struct TaylorSedovTestCTX_t {
-	TaylorSedovProblem *p;
-	double r_min;
-	double dr;
-	double tZero;
-} TaylorSedovTestCTX;
-
-void evalTaylorSedovBC( double t_sim, int /* nc */, const double * /* skin */, double * GKYL_RESTRICT ghost, void *ctx)
+/*
+void evalTaylorSedovBC( double t_sim, int nc, const double * skin, double * GKYL_RESTRICT ghost, void *ctx)
 {
   TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
   TaylorSedovProblem *p = ( ( TaylorSedovTestCTX* )ctx )->p;
@@ -38,14 +35,13 @@ void evalTaylorSedovBC( double t_sim, int /* nc */, const double * /* skin */, d
   RHO_UPHI( ghost )   = 0.0;
   ENERGY( ghost )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
 }
-
+*/
 
 void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
 {
-  TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
-  TaylorSedovProblem *p = ( ( TaylorSedovTestCTX* )ctx )->p;
+  TaylorSedovProblem *p = ( ( TaylorSedovProblem* )ctx );
 
-  double t = t_sim + tsCTX->tZero;
+  double t = t_sim + .00641500299099584182;
   double r = rCoordinate( xn );
   double u = TaylorSedovU( t, r, p );
   double rho = TaylorSedovRho( t, r, p );
@@ -62,15 +58,14 @@ void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* G
 // map (r,theta) -> (x,y)
 void mapc2p(double t, const double *xc, double* GKYL_RESTRICT xp, void *ctx)
 {
-  double r = rCoordinate( xc ), theta = thetaCoordinate( xc ), phi = phiCoordinate( xc );
+  double r = rCoordinate( xc ), theta = thetaCoordinate( xc );
 
   // Physical space is always (x,y,z)
   //
-  xp[ 0 ] = r * sin( theta ) * cos( phi ); 
+  xp[ 0 ] = r * cos( theta ); 
 
-  xp[ 1 ] = r * sin( theta ) * sin( phi );
+  xp[ 1 ] = r * sin( theta );
 
-  xp[ 2 ] = r * cos( theta );
 }
 
 int main(int argc, char **argv)
@@ -80,12 +75,11 @@ int main(int argc, char **argv)
 
   int NX = APP_ARGS_CHOOSE(app_args.xcells[0], 64);
   int NY = APP_ARGS_CHOOSE(app_args.xcells[1], 2);
-  int NZ = APP_ARGS_CHOOSE(app_args.xcells[2], 2);
 
   double theta = 0.01; // wedge angle
 
   double r_min = 0.10;
-  double r_max = 1.38;
+  double r_max = 0.74;
 
   double dr = ( r_max - r_min )/NX;
 
@@ -100,11 +94,6 @@ int main(int argc, char **argv)
 	  .gas_gamma = 5.0/3.0
   };
 
-  TaylorSedovTestCTX ctx = {
-	  .p = &testProblem,
-	  .r_min = r_min,
-	  .dr = dr
-  };
 
   // Precompute the proportionality constant
   SetAlpha( &testProblem );
@@ -119,8 +108,6 @@ int main(int argc, char **argv)
   // physical time
   double tZero = pow( RZero/REnd, 5.0/2.0 ) * tEnd;
 
-  ctx.tZero = tZero;
-
   // Now work out energy
   testProblem.InjectedEnergy = pow( RZero / testProblem.alpha, 5.0 ) * testProblem.rhoZero / ( tZero*tZero );
 
@@ -133,31 +120,28 @@ int main(int argc, char **argv)
 
     .equation = euler,
     .evolve = 1,
-    .ctx = &ctx,
+    .ctx = &testProblem,
     .init = evalTaylorSedovInit,
-	 .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
 
-    .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
+    .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
 	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
 	 // .bcz ignored because set to be periodic later
   };
 
   // VM app
   struct gkyl_moment app_inp = {
-    .name = "euler_taylorsedov_test",
+    .name = "euler_taylorsedov_test2d",
 
-    .ndim = 3,
+    .ndim = 2,
     // grid in computational space
-    .lower = { r_min, -theta/2, 0.0 },
-    .upper = { r_max,  theta/2, 2.0*M_PI },
-    .cells = { NX, NY, NZ },
+    .lower = { r_min, -theta/2 },
+    .upper = { r_max,  theta/2 },
+    .cells = { NX, NY },
 
     .mapc2p = mapc2p, // mapping of computational to physical space
 
-    .cfl_frac = 0.9,
+    .cfl_frac = 0.1,
 
-    .num_periodic_dir = 1,
-    .periodic_dirs = { 2 },
     .num_species = 1,
     .species = { fluid },
   };
@@ -166,7 +150,7 @@ int main(int argc, char **argv)
   gkyl_moment_app *app = gkyl_moment_app_new(&app_inp);
 
   // start, end and initial time-step
-  double tcurr = 0.0, tend = tEnd - tZero;
+  double tcurr = 0.0, tend = 0.1;
 
   // initialize simulation
   gkyl_moment_app_apply_ic(app, tcurr);
