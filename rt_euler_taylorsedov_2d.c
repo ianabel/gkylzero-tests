@@ -18,7 +18,14 @@
 #endif
 
 
-/*
+typedef struct TaylorSedovTestCTX_t {
+	TaylorSedovProblem *p;
+	double r_min;
+	double dr;
+	double tZero;
+} TaylorSedovTestCTX;
+
+#ifdef USE_BC_FUNC
 void evalTaylorSedovBC( double t_sim, int nc, const double * skin, double * GKYL_RESTRICT ghost, void *ctx)
 {
   TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
@@ -35,13 +42,14 @@ void evalTaylorSedovBC( double t_sim, int nc, const double * skin, double * GKYL
   RHO_UPHI( ghost )   = 0.0;
   ENERGY( ghost )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
 }
-*/
+#endif
 
 void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
 {
-  TaylorSedovProblem *p = ( ( TaylorSedovProblem* )ctx );
+  TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
+  TaylorSedovProblem *p = ( ( TaylorSedovTestCTX* )ctx )->p;
 
-  double t = t_sim + .00641500299099584182;
+  double t = t_sim + tsCTX->tZero;
   double r = rCoordinate( xn );
   double u = TaylorSedovU( t, r, p );
   double rho = TaylorSedovRho( t, r, p );
@@ -52,7 +60,6 @@ void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* G
   RHO_UTHETA( fout ) = 0.0;
   RHO_UPHI( fout )   = 0.0;
   ENERGY( fout )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
-
 }
 
 // map (r,theta) -> (x,y)
@@ -79,7 +86,7 @@ int main(int argc, char **argv)
   double theta = 0.01; // wedge angle
 
   double r_min = 0.10;
-  double r_max = 0.74;
+  double r_max = 1.38;
 
   double dr = ( r_max - r_min )/NX;
 
@@ -94,6 +101,11 @@ int main(int argc, char **argv)
 	  .gas_gamma = 5.0/3.0
   };
 
+  TaylorSedovTestCTX context = {
+	  .r_min = 0.10,
+	  .dr = dr,
+	  .p = &testProblem,
+  };
 
   // Precompute the proportionality constant
   SetAlpha( &testProblem );
@@ -107,6 +119,7 @@ int main(int argc, char **argv)
   // from the requirement that the shock end up at a given position at a given
   // physical time
   double tZero = pow( RZero/REnd, 5.0/2.0 ) * tEnd;
+  context.tZero = tZero;
 
   // Now work out energy
   testProblem.InjectedEnergy = pow( RZero / testProblem.alpha, 5.0 ) * testProblem.rhoZero / ( tZero*tZero );
@@ -120,12 +133,16 @@ int main(int argc, char **argv)
 
     .equation = euler,
     .evolve = 1,
-    .ctx = &testProblem,
+    .ctx = &context,
     .init = evalTaylorSedovInit,
 
+#ifdef USE_BC_FUNC
+    .bc_lower_func = evalTaylorSedovBC,
+    .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
+#else
     .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
-	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
-	 // .bcz ignored because set to be periodic later
+#endif
+    .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
   };
 
   // VM app

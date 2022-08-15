@@ -307,7 +307,7 @@ double TaylorSedovP( double t, double r, TaylorSedovProblem *p ) {
 		double Rdot = 2*TaylorSedovR( t, p )/( 5 * t );
 		return p->rhoZero * Rdot * Rdot * pTilde( XiVal, p );
 	} else {
-		return 0;
+		return EXTERNAL_PRESSURE;
 	}
 }
 

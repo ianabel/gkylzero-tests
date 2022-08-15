@@ -24,24 +24,24 @@ def read_data(pre, species, frame, gas_gamma):
 
 
     r_min = 0.10;
-    r_max = 0.78;
+    r_max = 1.38;
     NX = 64;
     dr = (r_max - r_min)/NX;
     r_values = np.linspace(r_min + dr/2,r_max - dr/2,NX)
 
-    plt.plot( r_values, rho[:,0,0] , label = 'rho')
-    plt.plot( r_values, rhoux[:,0,0], label = 'u' )
+    plt.plot( r_values, rho[:,0] , label = 'rho')
+    plt.plot( r_values, rhoux[:,0], label = 'u' )
 
     p = (e - 0.5*rho*rhoux*rhoux)*(gas_gamma - 1.0)
 
-    plt.plot( r_values, p[:,0,0], label = 'p' )
+    plt.plot( r_values, p[:,0], label = 'p' )
 
     plt.legend(loc='best')
 
     plt.show()
 
-    print(rho[:,0,0])
+    print(rho[:,0])
     print("----")
-    print(p[:,0,0])
+    print(p[:,0])
     
-read_data('euler_taylorsedov_test', 'euler', int(sys.argv[1]), 5.0/3.0)
+read_data('euler_taylorsedov_test2d', 'euler', int(sys.argv[1]), 5.0/3.0)

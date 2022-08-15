@@ -23,6 +23,8 @@
 #define RHO_UPHI( out ) out[ RHO_UPHI_IDX ]
 #define ENERGY( out ) out[ ENERGY_IDX ]
 
+#define EXTERNAL_PRESSURE 1e-5
+
 /*
  * This test sets up the spherically-symmettric
  * Taylor-Sedov blast wave into a constant-density medium

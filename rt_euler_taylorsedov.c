@@ -14,7 +14,6 @@
 #define M_PI 3.14159265358979323844
 #endif
 
-
 typedef struct TaylorSedovTestCTX_t {
 	TaylorSedovProblem *p;
 	double r_min;
@@ -22,6 +21,7 @@ typedef struct TaylorSedovTestCTX_t {
 	double tZero;
 } TaylorSedovTestCTX;
 
+#ifdef USE_BC_FUNC
 void evalTaylorSedovBC( double t_sim, int /* nc */, const double * /* skin */, double * GKYL_RESTRICT ghost, void *ctx)
 {
   TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
@@ -38,6 +38,7 @@ void evalTaylorSedovBC( double t_sim, int /* nc */, const double * /* skin */, d
   RHO_UPHI( ghost )   = 0.0;
   ENERGY( ghost )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
 }
+#endif
 
 
 void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
@@ -135,9 +136,12 @@ int main(int argc, char **argv)
     .evolve = 1,
     .ctx = &ctx,
     .init = evalTaylorSedovInit,
+#ifdef USE_BC_FUNC
 	 .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
-
     .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
+#else
+	 .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
+#endif
 	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
 	 // .bcz ignored because set to be periodic later
   };
