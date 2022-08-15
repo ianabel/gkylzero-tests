@@ -30,7 +30,7 @@ def read_data(pre, species, frame, gas_gamma):
     r_values = np.linspace(r_min + dr/2,r_max - dr/2,NX)
 
     plt.plot( r_values, rho[:,0,0] , label = 'rho')
-    plt.plot( r_values, rhoux[:,0,0], label = 'u' )
+    plt.plot( r_values, rhoux[:,0,0]/rho[:,0,0], label = 'u' )
 
     p = (e - 0.5*rhoux*rhoux/rho)*(gas_gamma - 1.0)
 

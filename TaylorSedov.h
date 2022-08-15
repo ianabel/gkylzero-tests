@@ -35,6 +35,7 @@ typedef struct TaylorSedovProblem_t {
 	double InjectedEnergy;
 	double gas_gamma;
 	double alpha;
+	unsigned int dimension;
 } TaylorSedovProblem;
 
 void SetAlpha( TaylorSedovProblem * );
