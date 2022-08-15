@@ -4,3 +4,4 @@ TaylorSedovTest
 TaylorSedovSolution
 rt_euler_taylorsedov_2d
 *.so
+*.o

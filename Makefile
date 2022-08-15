@@ -29,9 +29,11 @@ TaylorSedovTest: rt_euler_taylorsedov.c TaylorSedovSolution.c TaylorSedov.h
 rt_euler_taylorsedov_2d: rt_euler_taylorsedov_2d.c TaylorSedovSolution.c TaylorSedov.h
 	$(CC) $(CFLAGS) $(INCLUDES) -o rt_euler_taylorsedov_2d rt_euler_taylorsedov_2d.c TaylorSedovSolution.c ${G0_DIR}/build/libgkylzero.a -lm -lgsl ${SUPERLU_LIB} ${LAPACK_LIB} -lpthread
 
-TaylorSedov.so: TaylorSedovSolution.c TaylorSedov.h
-	$(CC) $(CFLAGS) -shared -o TaylorSedov.so TaylorSedovSolution.c -lm -lgsl
+TaylorSedovSolution.o: TaylorSedovSolution.c TaylorSedov.h
+	$(CC) -c -Og -g -fPIC -o TaylorSedovSolution.o TaylorSedovSolution.c
 
+TaylorSedovSolution.so: TaylorSedovSolution.o
+	ld -shared -o TaylorSedovSolution.so TaylorSedovSolution.o -lm -lgsl
 
 clean:
 	rm -f TaylorSedovTest TaylorSedov.so rt_euler_taylorsedov_2d *.gkyl *.json;
