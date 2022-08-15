@@ -32,7 +32,7 @@ def read_data(pre, species, frame, gas_gamma):
     plt.plot( r_values, rho[:,0] , label = 'rho')
     plt.plot( r_values, rhoux[:,0], label = 'u' )
 
-    p = (e - 0.5*rho*rhoux*rhoux)*(gas_gamma - 1.0)
+    p = (e - 0.5*rhoux*rhoux/rho)*(gas_gamma - 1.0)
 
     plt.plot( r_values, p[:,0], label = 'p' )
 
@@ -43,5 +43,11 @@ def read_data(pre, species, frame, gas_gamma):
     print(rho[:,0])
     print("----")
     print(p[:,0])
+    print("----")
+    print(rhoux[:,0])
+    print("----")
+    print(rhouy[:,0])
+    print("----")
+    print(rhouz[:,0])
     
 read_data('euler_taylorsedov_test2d', 'euler', int(sys.argv[1]), 5.0/3.0)

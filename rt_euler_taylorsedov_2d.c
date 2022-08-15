@@ -37,7 +37,7 @@ void evalTaylorSedovBC( double t_sim, int nc, const double * skin, double * GKYL
   double P = TaylorSedovP( t, r, p );
 
   RHO( ghost )        = rho;
-  RHO_UR( ghost )     = u;
+  RHO_UR( ghost )     = rho*u;
   RHO_UTHETA( ghost ) = 0.0;
   RHO_UPHI( ghost )   = 0.0;
   ENERGY( ghost )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
@@ -56,7 +56,7 @@ void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* G
   double P = TaylorSedovP( t, r, p );
 
   RHO( fout )        = rho;
-  RHO_UR( fout )     = u;
+  RHO_UR( fout )     = rho*u;
   RHO_UTHETA( fout ) = 0.0;
   RHO_UPHI( fout )   = 0.0;
   ENERGY( fout )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;

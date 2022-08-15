@@ -32,7 +32,7 @@ def read_data(pre, species, frame, gas_gamma):
     plt.plot( r_values, rho[:,0,0] , label = 'rho')
     plt.plot( r_values, rhoux[:,0,0], label = 'u' )
 
-    p = (e - 0.5*rho*rhoux*rhoux)*(gas_gamma - 1.0)
+    p = (e - 0.5*rhoux*rhoux/rho)*(gas_gamma - 1.0)
 
     plt.plot( r_values, p[:,0,0], label = 'p' )
 
