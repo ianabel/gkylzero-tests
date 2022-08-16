@@ -21,6 +21,8 @@ typedef struct TaylorSedovTestCTX_t {
 	double tZero;
 } TaylorSedovTestCTX;
 
+#define N_VARIABLES 5
+
 void evalTaylorSedovBC( double t_sim, int /* nc */, const double * skin, double * GKYL_RESTRICT ghost, void *ctx)
 {
   TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
@@ -32,6 +34,8 @@ void evalTaylorSedovBC( double t_sim, int /* nc */, const double * skin, double 
   double rho = TaylorSedovRho( t, r, p );
   double P = TaylorSedovP( t, r, p );
 
+  double *ghost2 = & ghost[ N_VARIABLES ];
+
   /* We set ghost cells such that
 	* ( RHO( ghost ) + RHO( skin ) )/2.0 = rho etc.
 	*/
@@ -41,6 +45,21 @@ void evalTaylorSedovBC( double t_sim, int /* nc */, const double * skin, double 
   RHO_UPHI( ghost )   = 0.0;
   double TotalEnergy = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
   ENERGY( ghost )     = 2.0*TotalEnergy - ENERGY( skin );
+
+
+  /*
+	* linearly extrapolate into ghost2
+	* so 
+	* RHO( ghost2 ) = 2.0*RHO( ghost ) - RHO( skin )
+	* etc
+	*/
+
+  RHO( ghost2 )        = 2.0*RHO( ghost ) - RHO( skin );
+  RHO_UR( ghost2 )     = 2.0*RHO( ghost ) - RHO_UR( skin );
+  RHO_UTHETA( ghost2 ) = 0.0;
+  RHO_UPHI( ghost2 )   = 0.0;
+  ENERGY( ghost2 )     = 2.0*ENERGY( ghost ) - ENERGY( skin );
+
 }
 
 
@@ -140,9 +159,8 @@ int main(int argc, char **argv)
     .evolve = 1,
     .ctx = &ctx,
     .init = evalTaylorSedovInit,
-	 // .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
-    // .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
-	 .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
+	 .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
+    .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
 	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
 	 .bcz = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
   };

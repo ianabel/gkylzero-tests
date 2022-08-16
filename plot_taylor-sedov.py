@@ -25,7 +25,7 @@ def read_data(pre, species, frame, gas_gamma):
 
     r_min = 0.10;
     r_max = 0.74;
-    NX = 256;
+    NX = 64;
     dr = (r_max - r_min)/NX;
     r_values = np.linspace(r_min + dr/2,r_max - dr/2,NX)
 

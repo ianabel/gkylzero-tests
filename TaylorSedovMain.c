@@ -2,6 +2,12 @@
 #include <stdio.h>
 #include "TaylorSedov.h"
 
+double Nu1( TaylorSedovProblem * );
+double Nu2( TaylorSedovProblem * );
+double Nu3( TaylorSedovProblem * );
+double Nu4( TaylorSedovProblem * );
+double Nu5( TaylorSedovProblem * );
+
 int main( int, char ** )
 {
 	TaylorSedovProblem testProblem = {
@@ -11,9 +17,10 @@ int main( int, char ** )
 	};
 
 	SetAlpha( &testProblem );
-	printf( "Alpha = %.8f\n", testProblem.alpha );
-	printf( "Shock location at t = 0.1 is R = %.8f\n", TaylorSedovR( 0.1, &testProblem ) );
-	printf( "At Xi=1.0 we have p = %.8f", pTilde( 1.0, &testProblem ) );
+
+	printf( "Nu3 = %.8f\n", Nu3( &testProblem ) );
+	printf( "Nu4 = %.8f\n", Nu4( &testProblem ) );
+	printf( "Nu5 = %.8f\n", Nu5( &testProblem ) );
 	return 0;
 }
 
