@@ -35,7 +35,11 @@ TaylorSedovSolution.o: TaylorSedovSolution.c TaylorSedov.h
 TaylorSedovSolution.so: TaylorSedovSolution.o
 	ld -shared -o TaylorSedovSolution.so TaylorSedovSolution.o -lm -lgsl
 
+TaylorSedovMain: TaylorSedovMain.c TaylorSedovSolution.so 
+	$(CC) -Og -g -fPIC -o TaylorSedovMain TaylorSedovMain.c -L. -Wl,-rpath . -l:TaylorSedovSolution.so -lm -lgsl
+
+
 clean:
-	rm -f TaylorSedovTest TaylorSedov.so rt_euler_taylorsedov_2d *.gkyl *.json;
+	rm -f TaylorSedovTest TaylorSedovSolution.so TaylorSedovSolution.o rt_euler_taylorsedov_2d *.gkyl *.json TaylorSedovMain;
 
 .PHONY: clean

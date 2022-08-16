@@ -86,7 +86,7 @@ int main(int argc, char **argv)
   double theta = 0.01; // wedge angle
 
   double r_min = 0.10;
-  double r_max = 1.38;
+  double r_max = 0.74;
 
   double dr = ( r_max - r_min )/NX;
 
@@ -96,6 +96,7 @@ int main(int argc, char **argv)
   }
 
   TaylorSedovProblem testProblem = {
+	  .dimension = 3,
 	  .rhoZero = 1.0,
 	  .InjectedEnergy = 1.0,
 	  .gas_gamma = 5.0/3.0
@@ -111,9 +112,9 @@ int main(int argc, char **argv)
   SetAlpha( &testProblem );
 
   // Work out InjectedEnergy by picking where the shockwave should be at t = tEnd
-  double tEnd  = 0.1; // In seconds since the explosion
-  double RZero = 0.4; 
-  double REnd  = 1.2;
+  double tEnd  = 0.05; // In seconds since the explosion
+  double RZero = 0.4;
+  double REnd  = 0.5;
 
   // Work out what the initial time-since-explosion is
   // from the requirement that the shock end up at a given position at a given
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
 	 .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
 #endif
 	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
-	 // .bcz ignored because set to be periodic later
+	 .bcz = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
   };
 
   // VM app
@@ -152,16 +153,14 @@ int main(int argc, char **argv)
 
     .ndim = 3,
     // grid in computational space
-    .lower = { r_min, -theta/2, 0.0 },
-    .upper = { r_max,  theta/2, 2.0*M_PI },
+    .lower = { r_min,  ( M_PI - theta )/2.0, -theta/2.0 },
+    .upper = { r_max,  ( M_PI + theta )/2.0,  theta/2.0 },
     .cells = { NX, NY, NZ },
 
     .mapc2p = mapc2p, // mapping of computational to physical space
 
-    .cfl_frac = 0.9,
+    .cfl_frac = 0.35,
 
-    .num_periodic_dir = 1,
-    .periodic_dirs = { 2 },
     .num_species = 1,
     .species = { fluid },
   };
@@ -204,6 +203,8 @@ int main(int argc, char **argv)
   gkyl_wv_eqn_release(euler);
   gkyl_moment_app_release(app);
 
+  printf("Simulation ran from from t = %.8f to %.8f in time since explosion\n",tZero,tEnd );
+  printf("\tThe injected energy was %.8f J",testProblem.InjectedEnergy );
   printf("\n");
   printf("Number of update calls %ld\n", stat.nup);
   printf("Number of failed time-steps %ld\n", stat.nfail);

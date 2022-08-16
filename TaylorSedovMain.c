@@ -13,6 +13,7 @@ int main( int, char ** )
 	SetAlpha( &testProblem );
 	printf( "Alpha = %.8f\n", testProblem.alpha );
 	printf( "Shock location at t = 0.1 is R = %.8f\n", TaylorSedovR( 0.1, &testProblem ) );
+	printf( "At Xi=1.0 we have p = %.8f", pTilde( 1.0, &testProblem ) );
 	return 0;
 }
 

@@ -86,6 +86,12 @@ double Vmax( TaylorSedovProblem *p ) {
 	return 2.0/( gas_gamma + 1.0 );
 }
 
+double X( double V, TaylorSedovProblem *p ) {
+	double gas_gamma = p->gas_gamma;
+	return ( ( gas_gamma + 1.0 )/( 7.0 - gas_gamma ) )*( 5.0 - ( 3.0*gas_gamma - 1.0 )*V );
+
+}
+
 double Xi_offset( double dV, TaylorSedovProblem* p ) {
 	double gas_gamma = p->gas_gamma;
 	double V = Vmin( p ) + dV;
@@ -279,8 +285,16 @@ void SetAlpha( TaylorSedovProblem *p )
 }
 
 // Return Shock Location
+double R_index( TaylorSedovProblem *p ) {
+	return  1.0/( ( double )p->dimension + 2.0 );
+}
+
 double TaylorSedovR( double t, TaylorSedovProblem *p ) {
-	return p->alpha * pow( p->InjectedEnergy * t * t / p->rhoZero, 0.2 );
+	return p->alpha * pow( p->InjectedEnergy * t * t / p->rhoZero, R_index( p ) );
+}
+
+double Rdot( double t, TaylorSedovProblem *p ) {
+	return 2.0 * R_index( p ) * TaylorSedovR( t, p )/t;
 }
 
 double TaylorSedovRho( double t, double r, TaylorSedovProblem *p ) {
@@ -294,8 +308,7 @@ double TaylorSedovRho( double t, double r, TaylorSedovProblem *p ) {
 double TaylorSedovU( double t, double r, TaylorSedovProblem *p ) {
 	double XiVal = r/ TaylorSedovR( t, p );
 	if ( XiVal <= 1.0 ) {
-		double Rdot = 2*TaylorSedovR( t, p )/( 5 * t );
-		return Rdot * uTilde( XiVal, p );
+		return Rdot( t, p ) * uTilde( XiVal, p );
 	} else {
 		return 0;
 	}
@@ -304,8 +317,7 @@ double TaylorSedovU( double t, double r, TaylorSedovProblem *p ) {
 double TaylorSedovP( double t, double r, TaylorSedovProblem *p ) {
 	double XiVal = r/ TaylorSedovR( t, p );
 	if ( XiVal <= 1.0 ) {
-		double Rdot = 2*TaylorSedovR( t, p )/( 5 * t );
-		return p->rhoZero * Rdot * Rdot * pTilde( XiVal, p );
+		return p->rhoZero * Rdot( t, p ) * Rdot( t, p ) * pTilde( XiVal, p );
 	} else {
 		return EXTERNAL_PRESSURE;
 	}

@@ -45,5 +45,10 @@ double TaylorSedovRho( double , double , TaylorSedovProblem * );
 double TaylorSedovU( double, double, TaylorSedovProblem * );
 double TaylorSedovP( double, double, TaylorSedovProblem * );
 
+double uTilde( double, TaylorSedovProblem * );
+double pTilde( double, TaylorSedovProblem * );
+double RhoTilde( double, TaylorSedovProblem * );
+
+
 
 #endif // TAYLORSEDOV_H

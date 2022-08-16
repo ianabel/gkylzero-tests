@@ -96,6 +96,7 @@ int main(int argc, char **argv)
   }
 
   TaylorSedovProblem testProblem = {
+	  .dimension = 2,
 	  .rhoZero = 1.0,
 	  .InjectedEnergy = 1.0,
 	  .gas_gamma = 5.0/3.0
