@@ -42,6 +42,8 @@ def read_data(pre, species, frame, gas_gamma):
 
     print(rho[:,0,0])
     print("----")
+    print(rhoux[:,0,0]/rho[:,0,0])
+    print("----")
     print(p[:,0,0])
     
 read_data('euler_taylorsedov_test', 'euler', int(sys.argv[1]), 5.0/3.0)

@@ -21,24 +21,27 @@ typedef struct TaylorSedovTestCTX_t {
 	double tZero;
 } TaylorSedovTestCTX;
 
-#ifdef USE_BC_FUNC
-void evalTaylorSedovBC( double t_sim, int /* nc */, const double * /* skin */, double * GKYL_RESTRICT ghost, void *ctx)
+void evalTaylorSedovBC( double t_sim, int /* nc */, const double * skin, double * GKYL_RESTRICT ghost, void *ctx)
 {
   TaylorSedovTestCTX *tsCTX = ( TaylorSedovTestCTX* )ctx;
   TaylorSedovProblem *p = ( ( TaylorSedovTestCTX* )ctx )->p;
-  double r = tsCTX->r_min - tsCTX->dr/2.0;
+  double r = tsCTX->r_min;
   double t = t_sim + tsCTX->tZero;
+  /* Values at r = r_min */
   double u = TaylorSedovU( t, r, p );
   double rho = TaylorSedovRho( t, r, p );
   double P = TaylorSedovP( t, r, p );
 
-  RHO( ghost )        = rho;
-  RHO_UR( ghost )     = rho*u;
+  /* We set ghost cells such that
+	* ( RHO( ghost ) + RHO( skin ) )/2.0 = rho etc.
+	*/
+  RHO( ghost )        = 2.0*rho - RHO( skin );
+  RHO_UR( ghost )     = 2.0*rho*u - RHO_UR( skin );
   RHO_UTHETA( ghost ) = 0.0;
   RHO_UPHI( ghost )   = 0.0;
-  ENERGY( ghost )     = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
+  double TotalEnergy = P/( p->gas_gamma - 1.0 ) + ( 1.0/2.0 )*rho*u*u;
+  ENERGY( ghost )     = 2.0*TotalEnergy - ENERGY( skin );
 }
-#endif
 
 
 void evalTaylorSedovInit(double t_sim, const double* GKYL_RESTRICT xn, double* GKYL_RESTRICT fout, void *ctx)
@@ -137,12 +140,9 @@ int main(int argc, char **argv)
     .evolve = 1,
     .ctx = &ctx,
     .init = evalTaylorSedovInit,
-#ifdef USE_BC_FUNC
-	 .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
-    .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
-#else
+	 // .bc_lower_func = evalTaylorSedovBC, // { evalTaylorSedovBC, NULL, NULL },
+    // .bcx = { GKYL_SPECIES_FUNC, GKYL_SPECIES_COPY },
 	 .bcx = { GKYL_SPECIES_COPY, GKYL_SPECIES_COPY },
-#endif
 	 .bcy = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
 	 .bcz = { GKYL_SPECIES_WEDGE, GKYL_SPECIES_WEDGE },
   };
